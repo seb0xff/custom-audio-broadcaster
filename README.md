@@ -15,7 +15,7 @@ The library is currently only tested on macOs.
 
 ## Installation
 
-The library depends on [gstreamer](https://gstreamer.freedesktop.org/) and [mediamtx](https://github.com/bluenviron/mediamtx)
+The library depends on [gstreamer](https://gstreamer.freedesktop.org/) and [mediamtx](https://github.com/bluenviron/mediamtx).
 
 On macOs we can install them using homebrew:
 
@@ -122,6 +122,8 @@ target_link_libraries(example PRIVATE broadcaster)
 ```
 
 #### Client
+
+To test it out can use my example [client](https://github.com/seb0xff/custom-audio-broadcaster-client).
 
 Basically there's one endpoint you want to use: /v1/rooms, to list all available rooms and their urls and metadata.
 
