@@ -41,6 +41,7 @@ struct Room
   std::string description;
   int max_readers;
   Urls urls;
+  std::string data_url;
   bool has_audio_data_provider;
   bool has_text_data_provider;
 
@@ -85,9 +86,9 @@ public:
    */
   void unpublish_audio(const std::string &path);
 
-  void publish_text(const std::string &path, const std::function<std::string()> &data_provider);
+  void publish_text_data(const std::string &path, const std::function<void(json &data)> &data_provider);
 
-  void unpublish_text(const std::string &path);
+  void unpublish_text_data(const std::string &path);
 
   /**
    * It may throw if the media server responds with an error or the response is invalid.
@@ -152,8 +153,9 @@ private:
     std::string description;
     int max_readers;
     Urls urls;
+    std::string data_url;
     std::optional<RtspPusher> pusher;
-    std::optional<std::function<std::string()>> text_data_provider;
+    std::optional<std::function<void(json &data)>> text_data_provider;
   };
 
   httplib::Client api_client;

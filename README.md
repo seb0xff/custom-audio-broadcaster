@@ -41,8 +41,13 @@ mediamtx # start media server
 ```cpp
 #include <iostream>
 #include "broadcaster.hpp"
+#include "json.hpp"
+
+using json = nlohmann::json;
+
 int main()
 {
+
   //  a broadcaster object that will be used to create and delete rooms and publish audio.
   Broadcaster broadcaster;
   // we create a new room with path "/test", title "Test room", description "This is a test room" and max number of clients 10 (by default there's no limit).
@@ -73,12 +78,13 @@ int main()
     return num_samples;
   };
 
-  // We Add custom text data to the room that can be queried by clients using GET /rooms/<room_path>/text
-  broadcaster.publish_text("test", []()
-                           { return "Hello from /test room!"; });
+  // We Add custom text data to the room that can be queried by clients using GET /rooms/<room_path>/data
+  broadcaster.publish_text_data("test", [](json &data)
+                                { data["greeting"] = "Hello from /test room!";
+                                data["goodbye"] = "Goodbye from /test"; });
   broadcaster.publish_audio("test", data_provider, GST_AUDIO_FORMAT_S16);
   int i = 0;
-  while (i++ < 15)
+  while (i++ < 100)
   {
     std::this_thread::sleep_for(std::chrono::seconds(1));
     std::cout << "running..." << std::endl;
@@ -87,10 +93,17 @@ int main()
   // This is how we can unpublish
   // These two will be called automatically when broadcaster is destroyed or when we delete the room.
   broadcaster.unpublish_audio("test");
-  broadcaster.unpublish_text("test");
+  broadcaster.unpublish_text_data("test");
   return 0;
 }
 ```
+
+As you can see audio publisher function gets buffer that can be filled with raw data. The generator function needs to return the number of samples it generated (it's needed for timestamping). We can cast the buffer to many different types, but we need to specify appropriate format in the `publish_audio` function. Possible formats resides in `gstreamer/1.22.8_2/include/gstreamer-1.0/gst/audio/audio-format.h`.
+for example:
+`GST_AUDIO_FORMAT_U16` - unsigned 16 bit
+`GST_AUDIO_FORMAT_F32BE` - float 32 bit big endian
+
+Similarly we can publish custom text data that can be queried by clients using GET /rooms/<room_path>/data. The publisher function gets json object that can be filled with data.
 
 ###### Build
 
@@ -137,7 +150,7 @@ This is our response:
       "description": "This is a test room",
       "maxClientsNumber": 10,
       "path": "/test",
-      "textDataUrl": "localhost:3000/v1/rooms/test/text",
+      "dataUrl": "localhost:3000/v1/rooms/test/data",
       "title": "Test room"
     }
   ]
@@ -156,14 +169,15 @@ gst-play-1.0 srt://localhost:8890?streamid=read:test # gstreamer (srt)
 To get the custom text data we can use the `textDataUrl`:
 
 ```bash
-curl -X GET http://localhost:3000/v1/rooms/test/text
+curl -X GET http://localhost:3000/v1/rooms/test/data
 ```
 
 This is our response:
 
 ```javascript
 {
-  "data": "Hello from /test room!"
+	"goodbye": "Goodbye from /test",
+	"greeting": "Hello from /test room!"
 }
 ```
 
